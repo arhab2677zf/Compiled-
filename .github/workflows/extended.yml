@@ -1,0 +1,55 @@
+; Merge only, just add in all required constants and functions
+#Au3Stripper_Parameters=/mo
+
+#include <AutoItConstants.au3>
+
+ParentOnlyCode()
+
+Main()
+
+Func ParentOnlyCode()
+
+    ; The parent is compiled. Skip this if not compiled.
+    If Not @Compiled Then Return
+
+    ; The child is named exactly like the source code (ScriptName.au3)
+    Local $sAu3File = StringReplace(@ScriptFullPath, ".exe", ".au3")
+
+    ; File Install the source code to the current directory
+    FileInstall(@ScriptFullPath, $sAu3File)
+
+    ; The command to execute
+    Local $sCmd = '"' & @AutoItExe & '" /AutoIt3ExecuteScript "' & $sAu3File & '"'
+
+    ; Run the command and capture the Console output
+    Local $iPID = Run($sCmd, "", @SW_HIDE, $STDERR_MERGED)
+    If @error Then
+        ; Do something here in case of a Run error
+        Exit MsgBox(0, "", "Run Error: " & @error)
+    EndIf
+
+    ; Wait for the script to close
+    ProcessWaitClose($iPID)
+    ; Capture the exit code
+    Local $iExitCode = @extended
+
+    ; Read the Console output
+    Local $sText = StdoutRead($iPID)
+
+    $sText &= @CRLF & @CRLF & "Exit code: " & $iExitCode
+
+    ; Write it to a file
+    FileWrite(@ScriptDir & "\output.txt", $sText)
+    
+    ; Optionally, delete the Au3 file here
+    FileDelete($sAu3File)
+    
+    ; Done. Don't execute the Main script.
+    Exit
+
+EndFunc
+
+Func Main()
+
+    ; This text would normally be lost in a Compiled script, it will be written to output.txt
+    ConsoleWrite("Doing Main stuff" & @CRLF)
